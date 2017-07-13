@@ -1,0 +1,142 @@
+---
+title: "Course Project1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+We import the Data: Activity monitoring data
+```{r activity}
+# reading in the dataset
+activity<-read.csv("~/Downloads/activity.csv",header=TRUE)
+summary(cars)
+```
+The variables include in this datasets are:
+-**steps:** Numbers of steps in a 5-minute interval.
+-**date:** The date on which the measurement was taken in YYYY-MM-DD format.
+-**interval:** Identifier for the 5-minute-separated-value(CSV) file and there 
+For first part of assignment , we could delete NAs
+```{r deleteNA}
+data<-na.omit(activity)
+```
+
+Then we need to transform the dataset, where the variables are:
+-**steps:** the total number of the steps taken per day.
+-**d:** the Date 
+```{r transform1}
+date<-unique(data$date)
+newdata<-data.frame(steps=numeric(0),d=numeric(0))
+  for (d in date){
+    data0<-data[data$date==d,]
+    steps<-sum(data0$steps)
+    newdata<-rbind(newdata,cbind(steps,d))
+  }
+newdata$steps<-as.numeric(as.character(newdata$steps))
+```
+Then we have a new dataset called "newdata", then we make a histogram of the total number of steps taken each day.
+```{r histogram1,fig.height=4}
+hist(newdata$steps,breaks=53,xlab = "number of steps",main="total number of steps taken each day")
+```
+Then we calculate the mean of the total steps taken each day.
+```{r mean median}
+mean<-mean(newdata$steps)
+mean
+```
+And the median 
+```{r medain}
+median(newdata$steps)
+```
+We mak a time series plot of the 5-minute interval x-axis and the average number of steps across allthe days as y-axis. First we transform the dataset into a newone, with the variables:
+-**steps:** average number of steps taken, average across all days,
+-**i:** the 5-minute interval 
+```{r transform2}
+interval<-unique(activity$interval)
+newdata2<-data.frame(steps=numeric(0),i=numeric(0))
+for (i in interval){
+   data0<-data[data$interval==i,]
+   steps<-sum(data0$steps)/53
+  newdata2<-rbind(newdata2,cbind(steps,i))
+}
+```
+Then we plot the time series plot
+```{r plot,fig.height=4}
+plot(newdata2$i,newdata2$steps,type="l")
+```
+we find which 5-minute intervals, on average across all the days in the dataset, contains the maximum number of steps
+```{r max}
+max<-which.max(newdata2$steps)
+
+i.max<-newdata2[max,]$i
+```
+For the second part of the assignment, note that there are some missing data in the dataset "activity", which may introduce bias into some calculations or summaries of the data. Thus we first calculate the total number of missing values in the dataset
+```{r numberofNAs}
+sum(is.na(activity$steps))
+```
+Then we filling in all the missing data with the mean of all the days over the number of the days.
+```{r fill}
+activity[is.na(activity$steps),]$steps<-mean/288
+```
+thus we create a new dataset, which name is still "activity". Then for making the hisogram, we first transform the dataset like we did in the first part of the assignment.
+```{r transform3}
+new<-data.frame(steps=numeric(0),d=numeric(0))
+date1<-unique(activity$date)
+for (d in date1){
+  data0<-activity[activity$date==d,]
+  steps<-sum(data0$steps)
+ new<-rbind(new,cbind(steps,d))
+}
+new$steps=as.numeric(as.character(new$steps))
+```
+Then we plot the histogram
+```{r plot2}
+hist(new$steps,breaks=61,xlab = "number of steps",main="total number of steps taken each day")
+```
+And we calculate the mean and the meidan
+```{r mean2}
+mean(new$steps)
+median(new$steps)
+```
+The mean is still the same as we did before, but the median has been bigger.
+Then we use the function "weekdays()" create a new binary variables, 1 means the day is in the weekdays, and 0 means the day in the weekends.
+```{r binary variable}
+activity$week<-weekdays(as.Date(activity$d))
+activity$weekin=NULL
+for (i in 1:length(activity$week)){
+if(activity$week[i]=="Saturday"){
+  activity$weekin[i]<-0
+}else if(activity$week[i]=="Sunday"){
+  activity$weekin[i]<-0
+}else activity$weekin[i]<-1
+}
+```
+Then we draw a panel plot containing a time series plot of the 5-minute interval(x-axis) and the average number of steps taken, average across all weekdays or weekend days(y-axis).
+```{r panelplot}
+weekdays<-activity[activity$weekin==1,]
+weekends<-activity[activity$weekin==0,]
+# interval as a factor to make a plot 
+#for weekdays
+
+weekdays2<-data.frame(steps=numeric(0),i=numeric(0))
+for (i in interval){
+  data0<-weekdays[weekdays$interval==i,]
+  steps<-sum(data0$steps)/61
+  weekdays2<-rbind(weekdays2,cbind(steps,i))
+}
+
+#for weekends
+weekends2<-data.frame(steps=numeric(0),i=numeric(0))
+for (i in interval){
+  data0<-weekends[weekends$interval==i,]
+  steps<-sum(data0$steps)/61
+  weekends2<-rbind(weekends2,cbind(steps,i))
+}
+
+# plot the two panel plots
+par(mfrow=c(2,1),mar=c(4,4,1,1))
+plot(weekdays2$i,weekdays2$steps,type="l",xlab ="interval(weekdays)",ylab="steps")
+plot(weekends2$i,weekends2$steps,type="l",xlab ="interval(weekends)",ylab="steps")
+```
+
+
